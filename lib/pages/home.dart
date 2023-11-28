@@ -266,7 +266,7 @@ class _HomeState extends State<Home> {
                               child: Text(showCity,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 45,
+                                    fontSize: 25,
                                     fontWeight: FontWeight.w800,
                                     decoration: TextDecoration.none,
                                   )),
@@ -278,39 +278,35 @@ class _HomeState extends State<Home> {
                                     AppTheme.bg,
                                   ),
                                   fixedSize: MaterialStatePropertyAll<Size>(
-                                    Size.fromWidth(40),
+                                    Size.fromWidth(20),
                                   ),
                                   padding: MaterialStatePropertyAll(
                                       EdgeInsets.all(0)),
                                 ),
-                                onPressed: () {
-                                  Navigator.pushNamed(context, '/search');
+                                onPressed: () async {
+                                  final result = await Navigator.pushNamed(
+                                      context, '/search');
+                                  if (result == "reload") {
+                                    getData();
+                                  }
                                 },
-                                child: const Flex(
-                                  direction: Axis.horizontal,
-                                  children: [
-                                    Text(' ',
-                                        style: TextStyle(
-                                            decoration: TextDecoration.none)),
-                                    Icon(
-                                      Icons.edit,
-                                      size: 40,
-                                    )
-                                  ],
+                                child: const Icon(
+                                  Icons.edit,
+                                  size: 20,
                                 ))
                           ],
                         ),
                         const SizedBox(height: 10),
                         Container(
                           alignment: Alignment.center,
-                          margin: const EdgeInsets.all(0),
-                          child: getIcon(weatherIcon, 100),
+                          margin: const EdgeInsets.only(bottom: 50),
+                          child: getIcon(weatherIcon, 150),
                         ),
                         const SizedBox(height: 10),
                         Text(temperature,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 100,
+                              fontSize: 80,
                               fontWeight: FontWeight.w700,
                               decoration: TextDecoration.none,
                               letterSpacing: -3.0,
@@ -319,7 +315,7 @@ class _HomeState extends State<Home> {
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 30,
+                              fontSize: 25,
                               decoration: TextDecoration.none,
                               fontWeight: FontWeight.w500,
                               letterSpacing: -1.0,
@@ -413,7 +409,6 @@ class _HomeState extends State<Home> {
                         Flex(
                             direction: Axis.horizontal,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               const Text("Today",
                                   style: TextStyle(

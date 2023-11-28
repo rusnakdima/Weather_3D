@@ -64,7 +64,7 @@ class _SearchState extends State<Search> {
                 saveStringToLocalStorage('city', chpu[1]);
                 saveStringToLocalStorage('country', chpu[0]);
               });
-              Navigator.pop(context);
+              Navigator.pop(context, "reload");
             },
             child: Container(
               alignment: Alignment.center,
@@ -113,7 +113,7 @@ class _SearchState extends State<Search> {
                     ElevatedButton(
                         style: const ButtonStyle(
                           backgroundColor: MaterialStatePropertyAll<Color>(
-                            Color.fromRGBO(255, 255, 255, 1),
+                            AppTheme.bg,
                           ),
                         ),
                         onPressed: () {
@@ -121,7 +121,7 @@ class _SearchState extends State<Search> {
                         },
                         child: const Icon(
                           Icons.arrow_back_ios,
-                          color: AppTheme.bg,
+                          color: Colors.white,
                           size: 30,
                         ))
                   ]),
