@@ -18,8 +18,8 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   Timer? timer;
 
-  late String city = 'state_new_york';
-  late String country = 'usa';
+  late String city = 'Null';
+  late String country = 'Null';
 
   late String showCity = 'New York';
   late String weather = 'Null';
@@ -117,6 +117,13 @@ class _HomeState extends State<Home> {
   void getData() async {
     city = await getStringFromLocalStorage('city');
     country = await getStringFromLocalStorage('country');
+
+    if (city == '') {
+      city = 'state_new_york';
+    }
+    if (country == '') {
+      city = 'usa';
+    }
 
     if (city.isNotEmpty && country.isNotEmpty) {
       var url = Uri.parse(
