@@ -42,83 +42,25 @@ class _ForecastState extends State<Forecast> {
     return prefs.getString(key) ?? '';
   }
 
-  getIcon(String name, double sizeVal) {
-    late Map<String, Icon> icons = {
-      "clear_sky": Icon(
-        WeatherIcons.day_sunny,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "light_intensity_shower_rain": Icon(
-        WeatherIcons.day_showers,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "few_clouds": Icon(
-        WeatherIcons.cloud,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "partly_cloudy": Icon(
-        WeatherIcons.day_cloudy,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "broken_clouds": Icon(
-        WeatherIcons.day_cloudy,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "overcast_clouds": Icon(
-        WeatherIcons.cloudy,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "drizzle": Icon(
-        WeatherIcons.rain_mix,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "light_rain": Icon(
-        WeatherIcons.day_rain,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "moderate_rain": Icon(
-        WeatherIcons.rain_wind,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "heavy_intensity_rain": Icon(
-        WeatherIcons.rain,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "heavy_intensity_drizzle": Icon(
-        WeatherIcons.showers,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-    };
-    final icon = icons[name];
-    return icon;
-  }
-
   void getData() async {
     city = await getStringFromLocalStorage('city');
     country = await getStringFromLocalStorage('country');
 
     if (city.isNotEmpty && country.isNotEmpty) {
-      var url = Uri.parse(
-          'https://world-weather.info/forecast/$country/$city/14days/');
-      final response = await http.Client()
-          .get(url, headers: {HttpHeaders.cookieHeader: 'celsius=1'});
-      if (response.statusCode == 200) {
-        var document = parse(response.body);
-        var div = document.body!.querySelectorAll(".weather-short");
-        getDaylyData(div);
-      } else {
-        throw Exception();
+      try {
+        var url = Uri.parse(
+            'https://world-weather.info/forecast/$country/$city/14days/');
+        final response = await http.Client()
+            .get(url, headers: {HttpHeaders.cookieHeader: 'celsius=1'});
+        if (response.statusCode == 200) {
+          var document = parse(response.body);
+          var div = document.body!.querySelectorAll(".weather-short");
+          getDaylyData(div);
+        } else {
+          throw Exception();
+        }
+      } catch (e) {
+        print('Error: $e');
       }
     }
   }
@@ -142,14 +84,12 @@ class _ForecastState extends State<Forecast> {
       day = item.querySelector("div")!.nodes[1].toString().substring(3, 5);
       icon = item
           .querySelector("table")!
-          .querySelectorAll("tr")[1]!
+          .querySelectorAll("tr")[1]
           .querySelectorAll("td")[1]
-          .querySelector("div")
-          .attributes["title"]
+          .querySelector("div")!
+          .className
           .toString()
-          .toLowerCase()
-          .replaceAll(" ", "_");
-      // final int i = daysWeather.toList().length;
+          .split(" ")[2];
       setState(() {
         daysWeather.add(ElevatedButton(
             style: const ButtonStyle(
@@ -180,11 +120,10 @@ class _ForecastState extends State<Forecast> {
                   children: [
                     Container(
                       alignment: Alignment.center,
-                      margin: const EdgeInsets.only(bottom: 20),
-                      child: getIcon(icon, 60),
+                      margin: const EdgeInsets.all(0),
+                      child: Image.asset('assets/images/$icon.png',
+                          width: 100, height: 100),
                     ),
-                    // Image.asset("assets/images/icon.png",
-                    //     width: 50, height: 50),
                     const SizedBox(height: 5),
                     Text(day,
                         style: const TextStyle(
@@ -213,10 +152,9 @@ class _ForecastState extends State<Forecast> {
     String weatherIcon = tr
         .querySelectorAll("td")[1]
         .querySelector("div")!
-        .attributes["title"]
+        .className
         .toString()
-        .toLowerCase()
-        .replaceAll(" ", "_");
+        .split(" ")[2];
     String probability = tr.querySelectorAll("td")[3].text;
     String windSpeed = tr
         .querySelectorAll("td")[5]
@@ -237,180 +175,172 @@ class _ForecastState extends State<Forecast> {
         .replaceAll("°", "");
     String tempFeel =
         tr.querySelectorAll("td")[2]!.text.toString().replaceAll("°", "");
+    if (weatherIcon == '') weatherIcon = 'NULL';
+    if (probability == '') probability = 'NULL';
+    if (windSpeed == '') windSpeed = 'NULL';
+    if (humidity == '') humidity = 'NULL';
+    if (weather == '') weather = 'NULL';
+    if (temp == '') temp = 'NULL';
+    if (tempFeel == '') tempFeel = 'NULL';
 
     dateShow = data.querySelector(".dates")!.text.toString();
 
-    if (weatherIcon == '' ||
-        probability == '' ||
-        windSpeed == '' ||
-        humidity == '' ||
-        weather == '' ||
-        temp == '' ||
-        tempFeel == '') {
-      setState(() {
-        infoDayWeather = const Column(
-          children: [Row(), Row()],
-        );
-      });
-    } else {
-      setState(() {
-        infoDayWeather = Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.fromLTRB(0, 50, 0, 0),
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(30)),
-                  border: Border.all(color: Colors.grey),
-                  color: Colors.white10),
-              child: Flex(direction: Axis.vertical, children: [
-                Center(
-                  child: Text(dateShow,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        decoration: TextDecoration.none,
-                        fontWeight: FontWeight.w700,
-                      )),
-                ),
-                Flex(
-                  direction: Axis.horizontal,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flex(
-                      direction: Axis.vertical,
-                      children: [
-                        Container(
-                          alignment: Alignment.center,
-                          margin: const EdgeInsets.only(bottom: 50),
-                          child: getIcon(weatherIcon, 100),
-                        ),
-                        // Image.asset("assets/images/icon.png",
-                        //     width: 130, height: 130),
-                        SizedBox(
-                          width: 150,
-                          child: Text(weather,
-                              textAlign: TextAlign.left,
-                              softWrap: true,
-                              maxLines: 5,
-                              style: const TextStyle(
-                                overflow: TextOverflow.fade,
-                                color: Colors.white,
-                                fontSize: 20,
-                                decoration: TextDecoration.none,
-                                fontWeight: FontWeight.w700,
-                              )),
-                        )
-                      ],
-                    ),
-                    Flex(
-                      direction: Axis.vertical,
-                      children: [
-                        Text('$temp°',
+    setState(() {
+      infoDayWeather = Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(0, 50, 0, 0),
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(30)),
+                border: Border.all(color: Colors.grey),
+                color: Colors.white10),
+            child: Flex(direction: Axis.vertical, children: [
+              Center(
+                child: Text(dateShow,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      decoration: TextDecoration.none,
+                      fontWeight: FontWeight.w700,
+                    )),
+              ),
+              Flex(
+                direction: Axis.horizontal,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flex(
+                    direction: Axis.vertical,
+                    children: [
+                      Container(
+                        alignment: Alignment.center,
+                        margin: const EdgeInsets.all(0),
+                        child: Image.asset('assets/images/$weatherIcon.png',
+                            width: 150, height: 150),
+                      ),
+                      SizedBox(
+                        width: 150,
+                        child: Text(weather,
+                            textAlign: TextAlign.left,
+                            softWrap: true,
+                            maxLines: 5,
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 55,
-                              decoration: TextDecoration.none,
-                              fontWeight: FontWeight.w700,
-                            )),
-                        Text('Feels like $tempFeel°',
-                            style: const TextStyle(
+                              overflow: TextOverflow.fade,
                               color: Colors.white,
                               fontSize: 20,
                               decoration: TextDecoration.none,
-                              fontWeight: FontWeight.w400,
+                              fontWeight: FontWeight.w700,
                             )),
-                        const Icon(WeatherIcons.windy, size: 55),
-                        // Image.asset("assets/images/icon.png",
-                        //     width: 80, height: 80),
-                      ],
+                      )
+                    ],
+                  ),
+                  Flex(
+                    direction: Axis.vertical,
+                    children: [
+                      Text('$temp°',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 55,
+                            decoration: TextDecoration.none,
+                            fontWeight: FontWeight.w700,
+                          )),
+                      Text('Feels like $tempFeel°',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            decoration: TextDecoration.none,
+                            fontWeight: FontWeight.w400,
+                          )),
+                      const Icon(WeatherIcons.windy, size: 55),
+                      // Image.asset("assets/images/icon.png",
+                      //     width: 80, height: 80),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 25),
+              Flex(
+                direction: Axis.horizontal,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flex(direction: Axis.vertical, children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      child: const Icon(WeatherIcons.night_alt_rain_wind,
+                          size: 25),
+                      // Image.asset("assets/images/icon.png",
+                      //     width: 50, height: 50),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 25),
-                Flex(
-                  direction: Axis.horizontal,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flex(direction: Axis.vertical, children: [
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        child: const Icon(WeatherIcons.night_alt_rain_wind,
-                            size: 25),
-                        // Image.asset("assets/images/icon.png",
-                        //     width: 50, height: 50),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(probability,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            decoration: TextDecoration.none,
-                          )),
-                      const SizedBox(height: 10),
-                      const Text("Probability",
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 18,
-                            decoration: TextDecoration.none,
-                            fontWeight: FontWeight.w400,
-                          ))
-                    ]),
-                    Flex(direction: Axis.vertical, children: [
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        child: const Icon(WeatherIcons.day_windy, size: 25),
-                        // Image.asset("assets/images/icon.png",
-                        //     width: 50, height: 50),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(windSpeed,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            decoration: TextDecoration.none,
-                          )),
-                      const SizedBox(height: 10),
-                      const Text("Wind",
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 18,
-                            decoration: TextDecoration.none,
-                            fontWeight: FontWeight.w400,
-                          )),
-                    ]),
-                    Flex(direction: Axis.vertical, children: [
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        child: const Icon(WeatherIcons.night_alt_cloudy_gusts,
-                            size: 25),
-                        // Image.asset("assets/images/icon.png",
-                        //     width: 50, height: 50),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(humidity,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            decoration: TextDecoration.none,
-                          )),
-                      const SizedBox(height: 10),
-                      const Text("Humidity",
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 18,
-                            decoration: TextDecoration.none,
-                            fontWeight: FontWeight.w400,
-                          ))
-                    ]),
-                  ],
-                )
-              ]),
-            )
-          ],
-        );
-      });
-    }
+                    const SizedBox(height: 10),
+                    Text(probability,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          decoration: TextDecoration.none,
+                        )),
+                    const SizedBox(height: 10),
+                    const Text("Probability",
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 18,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.w400,
+                        ))
+                  ]),
+                  Flex(direction: Axis.vertical, children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      child: const Icon(WeatherIcons.day_windy, size: 25),
+                      // Image.asset("assets/images/icon.png",
+                      //     width: 50, height: 50),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(windSpeed,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          decoration: TextDecoration.none,
+                        )),
+                    const SizedBox(height: 10),
+                    const Text("Wind",
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 18,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.w400,
+                        )),
+                  ]),
+                  Flex(direction: Axis.vertical, children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      child: const Icon(WeatherIcons.night_alt_cloudy_gusts,
+                          size: 25),
+                      // Image.asset("assets/images/icon.png",
+                      //     width: 50, height: 50),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(humidity,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          decoration: TextDecoration.none,
+                        )),
+                    const SizedBox(height: 10),
+                    const Text("Humidity",
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 18,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.w400,
+                        ))
+                  ]),
+                ],
+              )
+            ]),
+          )
+        ],
+      );
+    });
   }
 
   @override

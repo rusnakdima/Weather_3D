@@ -21,11 +21,11 @@ class _HomeState extends State<Home> {
   late String city = 'Null';
   late String country = 'Null';
 
-  late String showCity = 'New York';
+  late String showCity = 'Null';
   late String weather = 'Null';
 
   late String temperature = 'Null';
-  late String weatherIcon = 'Null';
+  late String weatherIcon = 'd100';
 
   late String probability = 'Null';
   late String windSpeed = 'Null';
@@ -52,68 +52,6 @@ class _HomeState extends State<Home> {
     getData();
   }
 
-  getIcon(String name, double sizeVal) {
-    late Map<String, Icon> icons = {
-      "clear_sky": Icon(
-        WeatherIcons.day_sunny,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "light_intensity_shower_rain": Icon(
-        WeatherIcons.day_showers,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "few_clouds": Icon(
-        WeatherIcons.cloud,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "partly_cloudy": Icon(
-        WeatherIcons.day_cloudy,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "broken_clouds": Icon(
-        WeatherIcons.day_cloudy,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "overcast_clouds": Icon(
-        WeatherIcons.cloudy,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "drizzle": Icon(
-        WeatherIcons.rain_mix,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "light_rain": Icon(
-        WeatherIcons.day_rain,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "moderate_rain": Icon(
-        WeatherIcons.rain_wind,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "heavy_intensity_rain": Icon(
-        WeatherIcons.rain,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-      "heavy_intensity_drizzle": Icon(
-        WeatherIcons.showers,
-        size: sizeVal,
-        color: Colors.white,
-      ),
-    };
-    final icon = icons[name];
-    return icon;
-  }
-
   void getData() async {
     city = await getStringFromLocalStorage('city');
     country = await getStringFromLocalStorage('country');
@@ -131,44 +69,49 @@ class _HomeState extends State<Home> {
       final response = await http.Client()
           .get(url, headers: {HttpHeaders.cookieHeader: 'celsius=1'});
       if (response.statusCode == 200) {
-        var document = parse(response.body);
-        var breadCrumbs = document.body!.querySelector("ul#bread-crumbs");
-        var table = document.body!.querySelectorAll("table.weather-today")[1];
-        var tr = table.querySelectorAll("tr");
-        setState(() {
-          showCity = breadCrumbs!
-              .querySelectorAll("li")[2]
-              .querySelector("a")!
-              .innerHtml
-              .toString();
-          weather = tr[0]
-              .querySelectorAll("td")[1]
-              .querySelector("div")!
-              .attributes["title"]
-              .toString();
-          temperature = tr[0]
-              .querySelectorAll("td")[1]
-              .querySelector("span")!
-              .innerHtml
-              .toString();
+        try {
+          var document = parse(response.body);
+          var breadCrumbs = document.body!.querySelector("ul#bread-crumbs");
+          var table = document.body!.querySelectorAll("table.weather-today")[1];
+          var tr = table.querySelectorAll("tr");
+          setState(() {
+            showCity = breadCrumbs!
+                .querySelectorAll("li")
+                .last
+                .querySelector("a")!
+                .innerHtml
+                .toString()
+                .replaceAll("Weather in ", "");
+            weather = tr[0]
+                .querySelectorAll("td")[1]
+                .querySelector("div")!
+                .attributes["title"]
+                .toString();
+            temperature = tr[0]
+                .querySelectorAll("td")[1]
+                .querySelector("span")!
+                .innerHtml
+                .toString();
 
-          weatherIcon = tr[0]
-              .querySelectorAll("td")[1]
-              .querySelector("div")!
-              .attributes["title"]
-              .toString()
-              .toLowerCase()
-              .replaceAll(" ", "_");
+            weatherIcon = tr[0]
+                .querySelectorAll("td")[1]
+                .querySelector("div")!
+                .className
+                .toString()
+                .split(" ")[1];
 
-          probability = tr[0].querySelectorAll("td")[3].innerHtml;
-          windSpeed = tr[0]
-              .querySelectorAll("td")[5]
-              .querySelectorAll("span")[1]
-              .attributes["title"]
-              .toString();
-          humidity = tr[0].querySelectorAll("td")[6].innerHtml;
-        });
-        getHourlyData(tr);
+            probability = tr[0].querySelectorAll("td")[3].innerHtml;
+            windSpeed = tr[0]
+                .querySelectorAll("td")[5]
+                .querySelectorAll("span")[1]
+                .attributes["title"]
+                .toString();
+            humidity = tr[0].querySelectorAll("td")[6].innerHtml;
+          });
+          getHourlyData(tr);
+        } catch (e) {
+          print('Error: $e');
+        }
       } else {
         throw Exception();
       }
@@ -189,11 +132,10 @@ class _HomeState extends State<Home> {
       temp = item.querySelectorAll("td")[1].querySelector("span").innerHtml;
       icon = item
           .querySelectorAll("td")[1]
-          .querySelector("div")
-          .attributes["title"]
+          .querySelector("div")!
+          .className
           .toString()
-          .toLowerCase()
-          .replaceAll(" ", "_");
+          .split(" ")[1];
       setState(() {
         hoursWeather.add(Container(
             alignment: Alignment.center,
@@ -223,8 +165,9 @@ class _HomeState extends State<Home> {
                 const SizedBox(height: 10),
                 Container(
                   alignment: Alignment.center,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  child: getIcon(icon, 60),
+                  margin: const EdgeInsets.all(0),
+                  child: Image.asset('assets/images/$icon.png',
+                      width: 100, height: 100),
                 ),
                 // Image.asset("assets/images/icon.png", width: 50, height: 50),
                 const SizedBox(height: 10),
@@ -300,14 +243,16 @@ class _HomeState extends State<Home> {
                                 child: const Icon(
                                   Icons.edit,
                                   size: 20,
+                                  color: Colors.white,
                                 ))
                           ],
                         ),
                         const SizedBox(height: 10),
                         Container(
                           alignment: Alignment.center,
-                          margin: const EdgeInsets.only(bottom: 50),
-                          child: getIcon(weatherIcon, 150),
+                          margin: const EdgeInsets.all(0),
+                          child: Image.asset('assets/images/$weatherIcon.png',
+                              width: 200, height: 200),
                         ),
                         const SizedBox(height: 10),
                         Text(temperature,
@@ -328,8 +273,6 @@ class _HomeState extends State<Home> {
                               letterSpacing: -1.0,
                             )),
                         const SizedBox(height: 10),
-                        // Image.asset("assets/images/icon.png" ,
-                        //     width: 250, height: 250),
                         Flex(
                             direction: Axis.horizontal,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -447,6 +390,7 @@ class _HomeState extends State<Home> {
                                         Icon(
                                           Icons.arrow_forward_ios_rounded,
                                           size: 16,
+                                          color: Colors.white,
                                         )
                                       ]))
                             ]),
