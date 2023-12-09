@@ -21,23 +21,24 @@ class _HomeState extends State<Home> {
   late String city = 'Null';
   late String country = 'Null';
 
+  late String date = 'Null';
+  late String time = 'Null';
   late String showCity = 'Null';
   late String weather = 'Null';
 
   late String temperature = 'Null';
   late String weatherIcon = 'd100';
 
-  late String probability = 'Null';
+  late String precipitation = 'Null';
   late String windSpeed = 'Null';
   late String humidity = 'Null';
 
-  late List<Container> hoursWeather = [];
+  late List<ElevatedButton> hoursWeather = [];
 
   @override
   void initState() {
     super.initState();
     refresh();
-    getData();
     timer = Timer.periodic(const Duration(seconds: 600), (Timer t) {
       getData();
     });
@@ -56,24 +57,22 @@ class _HomeState extends State<Home> {
     city = await getStringFromLocalStorage('city');
     country = await getStringFromLocalStorage('country');
 
-    if (city == '') {
-      city = 'state_new_york';
+    if (country == '') {
+      country = 'new_york';
     }
     if (country == '') {
       city = 'usa';
     }
 
     if (city.isNotEmpty && country.isNotEmpty) {
-      var url = Uri.parse(
-          'https://world-weather.info/forecast/$country/$city/24hours/');
-      final response = await http.Client()
-          .get(url, headers: {HttpHeaders.cookieHeader: 'celsius=1'});
-      if (response.statusCode == 200) {
-        try {
+      try {
+        var url = Uri.parse(
+            'https://world-weather.info/forecast/$country/$city/24hours/');
+        final response = await http.Client()
+            .get(url, headers: {HttpHeaders.cookieHeader: 'celsius=1'});
+        if (response.statusCode == 200) {
           var document = parse(response.body);
           var breadCrumbs = document.body!.querySelector("ul#bread-crumbs");
-          var table = document.body!.querySelectorAll("table.weather-today")[1];
-          var tr = table.querySelectorAll("tr");
           setState(() {
             showCity = breadCrumbs!
                 .querySelectorAll("li")
@@ -82,38 +81,31 @@ class _HomeState extends State<Home> {
                 .innerHtml
                 .toString()
                 .replaceAll("Weather in ", "");
-            weather = tr[0]
-                .querySelectorAll("td")[1]
-                .querySelector("div")!
-                .attributes["title"]
-                .toString();
-            temperature = tr[0]
-                .querySelectorAll("td")[1]
-                .querySelector("span")!
-                .innerHtml
-                .toString();
-
-            weatherIcon = tr[0]
-                .querySelectorAll("td")[1]
-                .querySelector("div")!
-                .className
-                .toString()
-                .split(" ")[1];
-
-            probability = tr[0].querySelectorAll("td")[3].innerHtml;
-            windSpeed = tr[0]
-                .querySelectorAll("td")[5]
-                .querySelectorAll("span")[1]
-                .attributes["title"]
-                .toString();
-            humidity = tr[0].querySelectorAll("td")[6].innerHtml;
           });
-          getHourlyData(tr);
-        } catch (e) {
-          print('Error: $e');
+          var table = document.body!.querySelectorAll(".weather-today")[1];
+          late List<Map<String, dynamic>> data = [];
+          table.querySelectorAll("tr").forEach((element) {
+            data.add({
+              'date': document.body!.querySelector("h2.dates")!.text,
+              'element': element
+            });
+          });
+          if (data.length < 24) {
+            var table1 = document.body!.querySelectorAll(".weather-today")[2];
+            String date = document.body!.querySelectorAll("h2.dates")[1].text;
+            table1
+                .querySelectorAll("tr")
+                .getRange(0, 24 - data.length)
+                .forEach((element) {
+              data.add({'date': date, 'element': element});
+            });
+          }
+          getHourlyData(data);
+        } else {
+          throw Exception();
         }
-      } else {
-        throw Exception();
+      } catch (e) {
+        print('Error: $e');
       }
     }
   }
@@ -128,59 +120,110 @@ class _HomeState extends State<Home> {
     late String icon = '';
 
     data.forEach((item) {
-      hour = item.querySelectorAll("td")[0].innerHtml;
-      temp = item.querySelectorAll("td")[1].querySelector("span").innerHtml;
-      icon = item
+      hour = item['element'].querySelectorAll("td")[0].innerHtml;
+      temp = item['element']
+          .querySelectorAll("td")[1]
+          .querySelector("span")
+          .innerHtml;
+      icon = item['element']
           .querySelectorAll("td")[1]
           .querySelector("div")!
           .className
           .toString()
           .split(" ")[1];
       setState(() {
-        hoursWeather.add(Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            margin: const EdgeInsets.all(0),
-            decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(25),
-                  bottom: Radius.circular(25),
-                ),
-                border: Border.all(
-                    color: Colors.white54,
-                    style: BorderStyle.solid,
-                    width: 1.0)),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(temp,
+        hoursWeather.add(
+          ElevatedButton(
+            style: const ButtonStyle(
+              backgroundColor: MaterialStatePropertyAll<Color>(AppTheme.bg),
+              padding: MaterialStatePropertyAll(EdgeInsets.all(0)),
+            ),
+            onPressed: () {
+              getInfoHour(item);
+            },
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              margin: const EdgeInsets.all(0),
+              decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(25),
+                    bottom: Radius.circular(25),
+                  ),
+                  border: Border.all(
+                      color: Colors.white54,
+                      style: BorderStyle.solid,
+                      width: 1.0)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    temp,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 25,
                       decoration: TextDecoration.none,
                       fontWeight: FontWeight.w700,
-                    )),
-                const SizedBox(height: 10),
-                Container(
-                  alignment: Alignment.center,
-                  margin: const EdgeInsets.all(0),
-                  child: Image.asset('assets/images/$icon.png',
-                      width: 100, height: 100),
-                ),
-                // Image.asset("assets/images/icon.png", width: 50, height: 50),
-                const SizedBox(height: 10),
-                Text(hour,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    alignment: Alignment.center,
+                    margin: const EdgeInsets.all(0),
+                    child: Image.asset('assets/images/$icon.png',
+                        width: 100, height: 100),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    hour,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       decoration: TextDecoration.none,
                       fontWeight: FontWeight.w700,
-                    )),
-              ],
-            )));
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
       });
+    });
+    getInfoHour(data[0]);
+  }
+
+  void getInfoHour(data) {
+    setState(() {
+      date = data['date'];
+      time = data['element'].querySelectorAll("td")[0].text;
+      weather = data['element']
+          .querySelectorAll("td")[1]
+          .querySelector("div")!
+          .attributes["title"]
+          .toString();
+      temperature = data['element']
+          .querySelectorAll("td")[1]
+          .querySelector("span")!
+          .innerHtml
+          .toString();
+
+      weatherIcon = data['element']
+          .querySelectorAll("td")[1]
+          .querySelector("div")!
+          .className
+          .toString()
+          .split(" ")[1];
+
+      precipitation = data['element'].querySelectorAll("td")[3].innerHtml;
+      windSpeed = data['element']
+          .querySelectorAll("td")[5]
+          .querySelectorAll("span")[1]
+          .attributes["title"]
+          .toString();
+      humidity = data['element'].querySelectorAll("td")[6].innerHtml;
     });
   }
 
@@ -251,10 +294,37 @@ class _HomeState extends State<Home> {
                         Container(
                           alignment: Alignment.center,
                           margin: const EdgeInsets.all(0),
+                          child: Flex(
+                            direction: Axis.horizontal,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(date,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.w700,
+                                    decoration: TextDecoration.none,
+                                    letterSpacing: -1.0,
+                                  )),
+                              const SizedBox(width: 10),
+                              Text(time,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.w700,
+                                    decoration: TextDecoration.none,
+                                    letterSpacing: -1.0,
+                                  )),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          alignment: Alignment.center,
+                          margin: const EdgeInsets.all(0),
                           child: Image.asset('assets/images/$weatherIcon.png',
                               width: 200, height: 200),
                         ),
-                        const SizedBox(height: 10),
                         Text(temperature,
                             style: const TextStyle(
                               color: Colors.white,
@@ -280,14 +350,12 @@ class _HomeState extends State<Home> {
                               Flex(direction: Axis.vertical, children: [
                                 Container(
                                   padding: const EdgeInsets.all(18),
-                                  child: const Icon(
-                                      WeatherIcons.night_alt_rain_wind,
-                                      size: 30),
+                                  child: const Icon(Icons.umbrella, size: 30),
                                   // Image.asset("assets/images/icon.png",
                                   // width: 50, height: 50)
                                 ),
                                 const SizedBox(height: 10),
-                                Text(probability,
+                                Text(precipitation,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
@@ -295,7 +363,7 @@ class _HomeState extends State<Home> {
                                       fontWeight: FontWeight.w400,
                                     )),
                                 const SizedBox(height: 10),
-                                const Text("Probability",
+                                const Text("Precipitation",
                                     style: TextStyle(
                                       color: Colors.grey,
                                       fontSize: 18,
@@ -306,8 +374,8 @@ class _HomeState extends State<Home> {
                               Flex(direction: Axis.vertical, children: [
                                 Container(
                                   padding: const EdgeInsets.all(18),
-                                  child: const Icon(WeatherIcons.day_windy,
-                                      size: 30),
+                                  child:
+                                      const Icon(WeatherIcons.wind, size: 30),
                                   // Image.asset("assets/images/icon.png",
                                   //  width: 50, height: 50)
                                 ),
@@ -320,7 +388,7 @@ class _HomeState extends State<Home> {
                                       fontWeight: FontWeight.w400,
                                     )),
                                 const SizedBox(height: 10),
-                                const Text("Wind",
+                                const Text("Wind Speed",
                                     style: TextStyle(
                                       color: Colors.grey,
                                       fontSize: 18,
@@ -331,9 +399,7 @@ class _HomeState extends State<Home> {
                               Flex(direction: Axis.vertical, children: [
                                 Container(
                                   padding: const EdgeInsets.all(18),
-                                  child: const Icon(
-                                      WeatherIcons.night_alt_cloudy_gusts,
-                                      size: 30),
+                                  child: const Icon(Icons.water_drop, size: 30),
                                   // Image.asset("assets/images/icon.png",
                                   // width: 50, height: 50)
                                 ),
@@ -360,7 +426,7 @@ class _HomeState extends State<Home> {
                             direction: Axis.horizontal,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text("Today",
+                              const Text("Next 24 hours",
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 30,
