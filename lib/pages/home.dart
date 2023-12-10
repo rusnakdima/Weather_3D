@@ -18,8 +18,11 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   Timer? timer;
 
-  late String city = 'Null';
-  late String country = 'Null';
+  late String lang = 'en';
+  late String domen = 'world-weather.info';
+
+  late String city = 'new_york';
+  late String country = 'usa';
 
   late String date = 'Null';
   late String time = 'Null';
@@ -32,6 +35,17 @@ class _HomeState extends State<Home> {
   late String precipitation = 'Null';
   late String windSpeed = 'Null';
   late String humidity = 'Null';
+
+  final Map<String, String> dict = {
+    "precip_en": "Precipitation",
+    "precip_ru": "Осадки",
+    "wind_en": "Wind Speed",
+    "wind_ru": "Скорость ветра",
+    "humidity_en": "Humidity",
+    "humidity_ru": "Влажность",
+    "next_en": "Next 24 hours",
+    "next_ru": "Следующие 24 часа",
+  };
 
   late List<ElevatedButton> hoursWeather = [];
 
@@ -54,45 +68,69 @@ class _HomeState extends State<Home> {
   }
 
   void getData() async {
-    city = await getStringFromLocalStorage('city');
-    country = await getStringFromLocalStorage('country');
+    String tempLang = await getStringFromLocalStorage('lang');
+    String tempDomen = await getStringFromLocalStorage('domen');
+    String tempCity = await getStringFromLocalStorage('city');
+    String tempCountry = await getStringFromLocalStorage('country');
+    setState(() {
+      if (tempLang != '') {
+        lang = tempLang;
+      }
+      if (tempDomen != '') {
+        domen = tempDomen;
+      }
+      if (tempCity != '') {
+        city = tempCity;
+      }
+      if (tempCountry != '') {
+        country = tempCountry;
+      }
+    });
 
-    if (country == '') {
-      country = 'new_york';
-    }
-    if (country == '') {
-      city = 'usa';
-    }
-
-    if (city.isNotEmpty && country.isNotEmpty) {
+    if (domen.isNotEmpty && city.isNotEmpty && country.isNotEmpty) {
       try {
-        var url = Uri.parse(
-            'https://world-weather.info/forecast/$country/$city/24hours/');
+        if (lang == 'en') {
+          domen += '/forecast';
+        }
+        if (lang == 'ru') {
+          domen += '/pogoda';
+        }
+        var url = Uri.parse('https://$domen/$country/$city/24hours/');
         final response = await http.Client()
             .get(url, headers: {HttpHeaders.cookieHeader: 'celsius=1'});
+            print(response.statusCode);
+            print(url);
         if (response.statusCode == 200) {
           var document = parse(response.body);
           var breadCrumbs = document.body!.querySelector("ul#bread-crumbs");
           setState(() {
-            showCity = breadCrumbs!
-                .querySelectorAll("li")
-                .last
-                .querySelector("a")!
-                .innerHtml
-                .toString()
-                .replaceAll("Weather in ", "");
+            if (lang == 'en') {
+              showCity = breadCrumbs!
+                  .querySelectorAll("li")
+                  .last
+                  .querySelector("a")!
+                  .innerHtml
+                  .toString();
+            } else if (lang == 'ru') {
+              showCity = breadCrumbs!
+                  .querySelectorAll("li")
+                  .last
+                  .querySelector("a")!
+                  .innerHtml
+                  .toString();
+            }
           });
           var table = document.body!.querySelectorAll(".weather-today")[1];
           late List<Map<String, dynamic>> data = [];
           table.querySelectorAll("tr").forEach((element) {
             data.add({
-              'date': document.body!.querySelector("h2.dates")!.text,
+              'date': document.body!.querySelector(".dates.red")!.text,
               'element': element
             });
           });
           if (data.length < 24) {
             var table1 = document.body!.querySelectorAll(".weather-today")[2];
-            String date = document.body!.querySelectorAll("h2.dates")[1].text;
+            String date = document.body!.querySelectorAll(".dates")[1].text;
             table1
                 .querySelectorAll("tr")
                 .getRange(0, 24 - data.length)
@@ -246,49 +284,14 @@ class _HomeState extends State<Home> {
                       direction: Axis.vertical,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Flex(
-                          direction: Axis.horizontal,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              '  ',
-                              style: TextStyle(decoration: TextDecoration.none),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 55),
-                              child: Text(showCity,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 25,
-                                    fontWeight: FontWeight.w800,
-                                    decoration: TextDecoration.none,
-                                  )),
-                            ),
-                            ElevatedButton(
-                                style: const ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStatePropertyAll<Color>(
-                                    AppTheme.bg,
-                                  ),
-                                  fixedSize: MaterialStatePropertyAll<Size>(
-                                    Size.fromWidth(20),
-                                  ),
-                                  padding: MaterialStatePropertyAll(
-                                      EdgeInsets.all(0)),
-                                ),
-                                onPressed: () async {
-                                  final result = await Navigator.pushNamed(
-                                      context, '/search');
-                                  if (result == "reload") {
-                                    getData();
-                                  }
-                                },
-                                child: const Icon(
-                                  Icons.edit,
-                                  size: 20,
-                                  color: Colors.white,
-                                ))
-                          ],
+                        Text(
+                          showCity,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 25,
+                            fontWeight: FontWeight.w800,
+                            decoration: TextDecoration.none,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         Container(
@@ -363,8 +366,8 @@ class _HomeState extends State<Home> {
                                       fontWeight: FontWeight.w400,
                                     )),
                                 const SizedBox(height: 10),
-                                const Text("Precipitation",
-                                    style: TextStyle(
+                                Text(dict['precip_$lang'].toString(),
+                                    style: const TextStyle(
                                       color: Colors.grey,
                                       fontSize: 18,
                                       decoration: TextDecoration.none,
@@ -388,8 +391,8 @@ class _HomeState extends State<Home> {
                                       fontWeight: FontWeight.w400,
                                     )),
                                 const SizedBox(height: 10),
-                                const Text("Wind Speed",
-                                    style: TextStyle(
+                                Text(dict['wind_$lang'].toString(),
+                                    style: const TextStyle(
                                       color: Colors.grey,
                                       fontSize: 18,
                                       decoration: TextDecoration.none,
@@ -412,8 +415,8 @@ class _HomeState extends State<Home> {
                                       fontWeight: FontWeight.w400,
                                     )),
                                 const SizedBox(height: 10),
-                                const Text("Humidity",
-                                    style: TextStyle(
+                                Text(dict['humidity_$lang'].toString(),
+                                    style: const TextStyle(
                                       color: Colors.grey,
                                       fontSize: 18,
                                       decoration: TextDecoration.none,
@@ -423,43 +426,20 @@ class _HomeState extends State<Home> {
                             ]),
                         const SizedBox(height: 25),
                         Flex(
-                            direction: Axis.horizontal,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text("Next 24 hours",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 30,
-                                    fontWeight: FontWeight.w700,
-                                    decoration: TextDecoration.none,
-                                  )),
-                              ElevatedButton(
-                                  style: const ButtonStyle(
-                                    backgroundColor:
-                                        MaterialStatePropertyAll<Color>(
-                                      AppTheme.bg,
-                                    ),
-                                    padding: MaterialStatePropertyAll(
-                                        EdgeInsets.all(0)),
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, '/forecast');
-                                  },
-                                  child: const Flex(
-                                      direction: Axis.horizontal,
-                                      children: [
-                                        Text("Next 14 days",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                            )),
-                                        Icon(
-                                          Icons.arrow_forward_ios_rounded,
-                                          size: 16,
-                                          color: Colors.white,
-                                        )
-                                      ]))
-                            ]),
+                          direction: Axis.horizontal,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text(
+                              dict['next_$lang'].toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 30,
+                                fontWeight: FontWeight.w700,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 25),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,

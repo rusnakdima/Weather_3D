@@ -18,9 +18,43 @@ class Forecast extends StatefulWidget {
 class _ForecastState extends State<Forecast> {
   Timer? timer;
 
-  late String city = '';
-  late String country = '';
+  late String lang = 'en';
+  late String domen = 'world-weather.info';
+
+  late String city = 'new_york';
+  late String country = 'usa';
   late String dateShow = '';
+
+  final Map<String, String> dict = {
+    "feels_en": "Feels like",
+    "feels_ru": "Ощущается как",
+    "precip_en": "Precipitation",
+    "precip_ru": "Осадки",
+    "wind_en": "Wind Speed",
+    "wind_ru": "Скорость ветра",
+    "humidity_en": "Humidity",
+    "humidity_ru": "Влажность",
+    "next_en": "Next 14 days",
+    "next_ru": "Следующие 14 дней",
+    "day_en": "Day",
+    "day_ru": "День",
+    "night_en": "Night",
+    "night_ru": "Ночь",
+    "Monday": "Mon",
+    "Tuesday": "Tue",
+    "Wednesday": "Wed",
+    "Thursday": "Thu",
+    "Friday": "Fri",
+    "Saturday": "Sat",
+    "Sunday": "Sun",
+    "Понедельник": "ПН",
+    "Вторник": "ВТ",
+    "Среда": "СР",
+    "Четверг": "ЧТ",
+    "Пятница": "ПТ",
+    "Суббота": "СБ",
+    "Воскресенье": "ВС",
+  };
 
   late List<ElevatedButton> daysWeather = [];
 
@@ -43,13 +77,34 @@ class _ForecastState extends State<Forecast> {
   }
 
   void getData() async {
-    city = await getStringFromLocalStorage('city');
-    country = await getStringFromLocalStorage('country');
+    String tempLang = await getStringFromLocalStorage('lang');
+    String tempDomen = await getStringFromLocalStorage('domen');
+    String tempCity = await getStringFromLocalStorage('city');
+    String tempCountry = await getStringFromLocalStorage('country');
+    setState(() {
+      if (tempLang != '') {
+        lang = tempLang;
+      }
+      if (tempDomen != '') {
+        domen = tempDomen;
+      }
+      if (tempCity != '') {
+        city = tempCity;
+      }
+      if (tempCountry != '') {
+        country = tempCountry;
+      }
+    });
 
     if (city.isNotEmpty && country.isNotEmpty) {
       try {
-        var url = Uri.parse(
-            'https://world-weather.info/forecast/$country/$city/14days/');
+        if (lang == 'en') {
+          domen += '/forecast';
+        }
+        if (lang == 'ru') {
+          domen += '/pogoda';
+        }
+        var url = Uri.parse('https://$domen/$country/$city/14days/');
         final response = await http.Client()
             .get(url, headers: {HttpHeaders.cookieHeader: 'celsius=1'});
         if (response.statusCode == 200) {
@@ -75,12 +130,8 @@ class _ForecastState extends State<Forecast> {
     late String icon = '';
 
     data.forEach((item) {
-      week = item
-          .querySelector("div")
-          .querySelector("span")
-          .innerHtml
-          .toString()
-          .substring(0, 3);
+      week =
+          item.querySelector("div").querySelector("span").innerHtml.toString();
       day = item.querySelector("div")!.nodes[1].toString().substring(3, 5);
       icon = item
           .querySelector("table")!
@@ -134,7 +185,7 @@ class _ForecastState extends State<Forecast> {
                         fontWeight: FontWeight.w900,
                       )),
                   const SizedBox(height: 5),
-                  Text(week,
+                  Text(dict[week].toString(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -244,11 +295,18 @@ class _ForecastState extends State<Forecast> {
                         fontWeight: FontWeight.w700,
                       )),
                 ),
-                createBlock('Day', weatherIconDay, weatherDay, tempDay,
-                    tempFeelDay, precipitationDay, windSpeedDay, humidityDay),
+                createBlock(
+                    dict['day_$lang'].toString(),
+                    weatherIconDay,
+                    weatherDay,
+                    tempDay,
+                    tempFeelDay,
+                    precipitationDay,
+                    windSpeedDay,
+                    humidityDay),
                 const SizedBox(height: 20),
                 createBlock(
-                    'Night',
+                    dict['night_$lang'].toString(),
                     weatherIconNight,
                     weatherNight,
                     tempNight,
@@ -324,7 +382,7 @@ class _ForecastState extends State<Forecast> {
                       decoration: TextDecoration.none,
                       fontWeight: FontWeight.w700,
                     )),
-                Text('Feels like $tempFeel°',
+                Text("${dict['feels_$lang'].toString()} $tempFeel°",
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -358,8 +416,8 @@ class _ForecastState extends State<Forecast> {
                     decoration: TextDecoration.none,
                   )),
               const SizedBox(height: 10),
-              const Text("Precipitation",
-                  style: TextStyle(
+              Text(dict['precip_$lang'].toString(),
+                  style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 18,
                     decoration: TextDecoration.none,
@@ -381,8 +439,8 @@ class _ForecastState extends State<Forecast> {
                     decoration: TextDecoration.none,
                   )),
               const SizedBox(height: 10),
-              const Text("Wind Speed",
-                  style: TextStyle(
+              Text(dict['wind_$lang'].toString(),
+                  style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 18,
                     decoration: TextDecoration.none,
@@ -404,8 +462,8 @@ class _ForecastState extends State<Forecast> {
                     decoration: TextDecoration.none,
                   )),
               const SizedBox(height: 10),
-              const Text("Humidity",
-                  style: TextStyle(
+              Text(dict['humidity_$lang'].toString(),
+                  style: const TextStyle(
                     color: Colors.grey,
                     fontSize: 18,
                     decoration: TextDecoration.none,
@@ -436,32 +494,16 @@ class _ForecastState extends State<Forecast> {
               children: [
                 Flex(
                   direction: Axis.horizontal,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ElevatedButton(
-                        style: const ButtonStyle(
-                          backgroundColor: MaterialStatePropertyAll<Color>(
-                            AppTheme.bg,
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Icon(
-                          Icons.arrow_back_ios,
-                          color: Colors.white,
-                          size: 30,
-                        )),
-                    const Text("Next 14 days",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 25,
-                          decoration: TextDecoration.none,
-                          fontWeight: FontWeight.w600,
-                        )),
-                    const Icon(
-                      Icons.more_vert_rounded,
-                      size: 40,
+                    Text(
+                      dict['next_$lang'].toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 25,
+                        decoration: TextDecoration.none,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),

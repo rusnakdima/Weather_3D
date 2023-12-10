@@ -7,7 +7,8 @@ import 'package:weather_3d/shared/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Search extends StatefulWidget {
-  const Search({super.key});
+  final Function(int) onChangePage;
+  const Search({Key? key, required this.onChangePage}) : super(key: key);
 
   @override
   State<Search> createState() => _SearchState();
@@ -16,22 +17,61 @@ class Search extends StatefulWidget {
 class _SearchState extends State<Search> {
   TextEditingController nameController = TextEditingController();
 
+  late String lang = 'en';
+  late String domen = 'world-weather.info';
+
   late String searchValue = '';
 
+  final Map<String, String> dict = {
+    "text_en": "Enter name city",
+    "text_ru": "Введите название города"
+  };
+
   late List<ElevatedButton> cities = [];
+
+  @override
+  void initState() {
+    super.initState();
+    getLang();
+  }
+
+  Future<String> getStringFromLocalStorage(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(key) ?? '';
+  }
 
   Future<void> saveStringToLocalStorage(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, value);
   }
 
+  void getLang() async {
+    String tempLang = await getStringFromLocalStorage('lang');
+    setState(() {
+      if (tempLang != '') {
+        lang = tempLang;
+      }
+    });
+  }
+
   void getData() async {
-    if (searchValue.isNotEmpty) {
-      var url =
-          Uri.parse('https://world-weather.info/search.php?term=$searchValue');
+    String tempDomen = await getStringFromLocalStorage('domen');
+
+    setState(() {
+      if (tempDomen != '') {
+        domen = tempDomen;
+      }
+    });
+
+    if (searchValue.isNotEmpty && domen.isNotEmpty) {
+      late String searchValue1 = searchValue;
+      if (lang == 'ru') {
+        searchValue1 = Uri.encodeFull(searchValue);
+      }
+      var url = Uri.parse('https://$domen/search.php?term=$searchValue1');
       final response = await http.get(url, headers: {
         HttpHeaders.acceptHeader: 'application/json, text/javascript, */*',
-        HttpHeaders.refererHeader: 'https://world-weather.info/'
+        HttpHeaders.refererHeader: 'https://$domen/'
       });
       if (response.statusCode == 200) {
         List arrObj = jsonDecode(response.body);
@@ -64,7 +104,8 @@ class _SearchState extends State<Search> {
                 saveStringToLocalStorage('city', chpu[1]);
                 saveStringToLocalStorage('country', chpu[0]);
               });
-              Navigator.pop(context, "reload");
+              // Navigator.push(context, MaterialPageRoute(builder: (context) => const Home()));
+              widget.onChangePage(0);
             },
             child: Container(
               alignment: Alignment.center,
@@ -109,31 +150,15 @@ class _SearchState extends State<Search> {
               child: Flex(
                 direction: Axis.vertical,
                 children: [
-                  Flex(direction: Axis.horizontal, children: [
-                    ElevatedButton(
-                        style: const ButtonStyle(
-                          backgroundColor: MaterialStatePropertyAll<Color>(
-                            AppTheme.bg,
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Icon(
-                          Icons.arrow_back_ios,
-                          color: Colors.white,
-                          size: 30,
-                        ))
-                  ]),
                   TextField(
                     controller: nameController,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      labelStyle: TextStyle(color: Colors.grey),
-                      enabledBorder: OutlineInputBorder(
+                    decoration: InputDecoration(
+                      labelStyle: const TextStyle(color: Colors.grey),
+                      enabledBorder: const OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.white)),
-                      border: OutlineInputBorder(),
-                      labelText: 'Enter name city',
+                      border: const OutlineInputBorder(),
+                      labelText: dict['text_$lang'].toString(),
                     ),
                     onChanged: (value) {
                       setState(() {
