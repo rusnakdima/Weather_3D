@@ -63,22 +63,26 @@ class _SearchState extends State<Search> {
       }
     });
 
-    if (searchValue.isNotEmpty && domen.isNotEmpty) {
-      late String searchValue1 = searchValue;
-      if (lang == 'ru') {
-        searchValue1 = Uri.encodeFull(searchValue);
+    try {
+      if (searchValue.isNotEmpty && domen.isNotEmpty) {
+        late String searchValue1 = searchValue;
+        if (lang == 'ru') {
+          searchValue1 = Uri.encodeFull(searchValue);
+        }
+        var url = Uri.parse('https://$domen/search.php?term=$searchValue1');
+        final response = await http.get(url, headers: {
+          HttpHeaders.acceptHeader: 'application/json, text/javascript, */*',
+          HttpHeaders.refererHeader: 'https://$domen/'
+        });
+        if (response.statusCode == 200) {
+          List arrObj = jsonDecode(response.body);
+          addCity(arrObj);
+        } else {
+          throw Exception([response.statusCode]);
+        }
       }
-      var url = Uri.parse('https://$domen/search.php?term=$searchValue1');
-      final response = await http.get(url, headers: {
-        HttpHeaders.acceptHeader: 'application/json, text/javascript, */*',
-        HttpHeaders.refererHeader: 'https://$domen/'
-      });
-      if (response.statusCode == 200) {
-        List arrObj = jsonDecode(response.body);
-        addCity(arrObj);
-      } else {
-        throw Exception();
-      }
+    } catch (e) {
+      print("Error: $e");
     }
   }
 

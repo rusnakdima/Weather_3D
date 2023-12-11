@@ -25,6 +25,8 @@ class _ForecastState extends State<Forecast> {
   late String country = 'usa';
   late String dateShow = '';
 
+  late String errorMessage = '';
+
   final Map<String, String> dict = {
     "feels_en": "Feels like",
     "feels_ru": "Ощущается как",
@@ -116,6 +118,8 @@ class _ForecastState extends State<Forecast> {
         }
       } catch (e) {
         print('Error: $e');
+        errorMessage += '\n';
+        errorMessage += e.toString();
       }
     }
   }
@@ -129,197 +133,215 @@ class _ForecastState extends State<Forecast> {
     late String week = '';
     late String icon = '';
 
-    data.forEach((item) {
-      week =
-          item.querySelector("div").querySelector("span").innerHtml.toString();
-      day = item.querySelector("div")!.nodes[1].toString().substring(3, 5);
-      icon = item
-          .querySelector("table")!
-          .querySelectorAll("tr")[1]
+    try {
+      data.forEach((item) {
+        week = item
+            .querySelector("div")
+            .querySelector("span")
+            .innerHtml
+            .toString();
+        day = item.querySelector("div")!.nodes[1].toString().substring(3, 5);
+        icon = item
+            .querySelector("table")!
+            .querySelectorAll("tr")[1]
+            .querySelectorAll("td")[1]
+            .querySelector("div")!
+            .className
+            .toString()
+            .split(" ")[2];
+        setState(() {
+          daysWeather.add(
+            ElevatedButton(
+              style: const ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll<Color>(AppTheme.bg),
+                padding: MaterialStatePropertyAll(EdgeInsets.all(0)),
+              ),
+              onPressed: () {
+                getInfoDay(item);
+              },
+              child: Container(
+                alignment: Alignment.center,
+                width: 120,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                margin: const EdgeInsets.all(0),
+                decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(25),
+                      bottom: Radius.circular(25),
+                    ),
+                    border: Border.all(
+                        color: Colors.white54,
+                        style: BorderStyle.solid,
+                        width: 1.0)),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      alignment: Alignment.center,
+                      margin: const EdgeInsets.all(0),
+                      child: Image.asset('assets/images/$icon.png',
+                          width: 100, height: 100),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(day,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.w900,
+                        )),
+                    const SizedBox(height: 5),
+                    Text(dict[week].toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          decoration: TextDecoration.none,
+                        ))
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
+      });
+    } catch (e) {
+      print("Error: $e");
+      errorMessage += '\n';
+      errorMessage += e.toString();
+    }
+    getInfoDay(data[0]);
+  }
+
+  void getInfoDay(data) {
+    try {
+      var table = data.querySelector("table");
+      var trDay = table.querySelectorAll("tr")[1];
+      var trNight = table.querySelectorAll("tr")[0];
+      String weatherIconDay = trDay
           .querySelectorAll("td")[1]
           .querySelector("div")!
           .className
           .toString()
           .split(" ")[2];
+      String precipitationDay = trDay.querySelectorAll("td")[3].text;
+      String windSpeedDay = trDay
+          .querySelectorAll("td")[5]
+          .querySelectorAll("span")[1]
+          .attributes["title"]
+          .toString();
+      String humidityDay = trDay.querySelectorAll("td")[6].text;
+      String weatherDay = trDay
+          .querySelectorAll("td")[1]
+          .querySelector("div")!
+          .attributes["title"]
+          .toString();
+      String tempDay = trDay
+          .querySelectorAll("td")[1]
+          .querySelector("span")!
+          .text
+          .toString()
+          .replaceAll("°", "");
+      String tempFeelDay =
+          trDay.querySelectorAll("td")[2]!.text.toString().replaceAll("°", "");
+      String weatherIconNight = trNight
+          .querySelectorAll("td")[1]
+          .querySelector("div")!
+          .className
+          .toString()
+          .split(" ")[2];
+      String precipitationNight = trNight.querySelectorAll("td")[3].text;
+      String windSpeedNight = trNight
+          .querySelectorAll("td")[5]
+          .querySelectorAll("span")[1]
+          .attributes["title"]
+          .toString();
+      String humidityNight = trNight.querySelectorAll("td")[6].text;
+      String weatherNight = trNight
+          .querySelectorAll("td")[1]
+          .querySelector("div")!
+          .attributes["title"]
+          .toString();
+      String tempNight = trNight
+          .querySelectorAll("td")[1]
+          .querySelector("span")!
+          .text
+          .toString()
+          .replaceAll("°", "");
+      String tempFeelNight = trNight
+          .querySelectorAll("td")[2]!
+          .text
+          .toString()
+          .replaceAll("°", "");
+      if (weatherIconDay == '') weatherIconDay = 'NULL';
+      if (precipitationDay == '') precipitationDay = 'NULL';
+      if (windSpeedDay == '') windSpeedDay = 'NULL';
+      if (humidityDay == '') humidityDay = 'NULL';
+      if (weatherDay == '') weatherDay = 'NULL';
+      if (tempDay == '') tempDay = 'NULL';
+      if (tempFeelDay == '') tempFeelDay = 'NULL';
+      if (weatherIconNight == '') weatherIconNight = 'NULL';
+      if (precipitationNight == '') precipitationNight = 'NULL';
+      if (windSpeedNight == '') windSpeedNight = 'NULL';
+      if (humidityNight == '') humidityNight = 'NULL';
+      if (weatherNight == '') weatherNight = 'NULL';
+      if (tempNight == '') tempNight = 'NULL';
+      if (tempFeelNight == '') tempFeelNight = 'NULL';
+
       setState(() {
-        daysWeather.add(
-          ElevatedButton(
-            style: const ButtonStyle(
-              backgroundColor: MaterialStatePropertyAll<Color>(AppTheme.bg),
-              padding: MaterialStatePropertyAll(EdgeInsets.all(0)),
-            ),
-            onPressed: () {
-              getInfoDay(item);
-            },
-            child: Container(
-              alignment: Alignment.center,
-              width: 120,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              margin: const EdgeInsets.all(0),
+        dateShow = data.querySelector(".dates")!.text.toString();
+        infoDayWeather = Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.fromLTRB(0, 50, 0, 0),
+              padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(25),
-                    bottom: Radius.circular(25),
-                  ),
-                  border: Border.all(
-                      color: Colors.white54,
-                      style: BorderStyle.solid,
-                      width: 1.0)),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
+                  borderRadius: const BorderRadius.all(Radius.circular(30)),
+                  border: Border.all(color: Colors.grey),
+                  color: Colors.white10),
+              child: Flex(
+                direction: Axis.vertical,
                 children: [
-                  Container(
-                    alignment: Alignment.center,
-                    margin: const EdgeInsets.all(0),
-                    child: Image.asset('assets/images/$icon.png',
-                        width: 100, height: 100),
+                  Center(
+                    child: Text(dateShow,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.w700,
+                        )),
                   ),
-                  const SizedBox(height: 5),
-                  Text(day,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        decoration: TextDecoration.none,
-                        fontWeight: FontWeight.w900,
-                      )),
-                  const SizedBox(height: 5),
-                  Text(dict[week].toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        decoration: TextDecoration.none,
-                      ))
+                  createBlock(
+                      dict['day_$lang'].toString(),
+                      weatherIconDay,
+                      weatherDay,
+                      tempDay,
+                      tempFeelDay,
+                      precipitationDay,
+                      windSpeedDay,
+                      humidityDay),
+                  const SizedBox(height: 20),
+                  createBlock(
+                      dict['night_$lang'].toString(),
+                      weatherIconNight,
+                      weatherNight,
+                      tempNight,
+                      tempFeelNight,
+                      precipitationNight,
+                      windSpeedNight,
+                      humidityNight),
                 ],
               ),
-            ),
-          ),
+            )
+          ],
         );
       });
-    });
-    getInfoDay(data[0]);
-  }
-
-  void getInfoDay(data) {
-    var table = data.querySelector("table");
-    var trDay = table.querySelectorAll("tr")[1];
-    var trNight = table.querySelectorAll("tr")[0];
-    String weatherIconDay = trDay
-        .querySelectorAll("td")[1]
-        .querySelector("div")!
-        .className
-        .toString()
-        .split(" ")[2];
-    String precipitationDay = trDay.querySelectorAll("td")[3].text;
-    String windSpeedDay = trDay
-        .querySelectorAll("td")[5]
-        .querySelectorAll("span")[1]
-        .attributes["title"]
-        .toString();
-    String humidityDay = trDay.querySelectorAll("td")[6].text;
-    String weatherDay = trDay
-        .querySelectorAll("td")[1]
-        .querySelector("div")!
-        .attributes["title"]
-        .toString();
-    String tempDay = trDay
-        .querySelectorAll("td")[1]
-        .querySelector("span")!
-        .text
-        .toString()
-        .replaceAll("°", "");
-    String tempFeelDay =
-        trDay.querySelectorAll("td")[2]!.text.toString().replaceAll("°", "");
-    String weatherIconNight = trNight
-        .querySelectorAll("td")[1]
-        .querySelector("div")!
-        .className
-        .toString()
-        .split(" ")[2];
-    String precipitationNight = trNight.querySelectorAll("td")[3].text;
-    String windSpeedNight = trNight
-        .querySelectorAll("td")[5]
-        .querySelectorAll("span")[1]
-        .attributes["title"]
-        .toString();
-    String humidityNight = trNight.querySelectorAll("td")[6].text;
-    String weatherNight = trNight
-        .querySelectorAll("td")[1]
-        .querySelector("div")!
-        .attributes["title"]
-        .toString();
-    String tempNight = trNight
-        .querySelectorAll("td")[1]
-        .querySelector("span")!
-        .text
-        .toString()
-        .replaceAll("°", "");
-    String tempFeelNight =
-        trNight.querySelectorAll("td")[2]!.text.toString().replaceAll("°", "");
-    if (weatherIconDay == '') weatherIconDay = 'NULL';
-    if (precipitationDay == '') precipitationDay = 'NULL';
-    if (windSpeedDay == '') windSpeedDay = 'NULL';
-    if (humidityDay == '') humidityDay = 'NULL';
-    if (weatherDay == '') weatherDay = 'NULL';
-    if (tempDay == '') tempDay = 'NULL';
-    if (tempFeelDay == '') tempFeelDay = 'NULL';
-    if (weatherIconNight == '') weatherIconNight = 'NULL';
-    if (precipitationNight == '') precipitationNight = 'NULL';
-    if (windSpeedNight == '') windSpeedNight = 'NULL';
-    if (humidityNight == '') humidityNight = 'NULL';
-    if (weatherNight == '') weatherNight = 'NULL';
-    if (tempNight == '') tempNight = 'NULL';
-    if (tempFeelNight == '') tempFeelNight = 'NULL';
-
-    setState(() {
-      dateShow = data.querySelector(".dates")!.text.toString();
-      infoDayWeather = Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(0, 50, 0, 0),
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(30)),
-                border: Border.all(color: Colors.grey),
-                color: Colors.white10),
-            child: Flex(
-              direction: Axis.vertical,
-              children: [
-                Center(
-                  child: Text(dateShow,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        decoration: TextDecoration.none,
-                        fontWeight: FontWeight.w700,
-                      )),
-                ),
-                createBlock(
-                    dict['day_$lang'].toString(),
-                    weatherIconDay,
-                    weatherDay,
-                    tempDay,
-                    tempFeelDay,
-                    precipitationDay,
-                    windSpeedDay,
-                    humidityDay),
-                const SizedBox(height: 20),
-                createBlock(
-                    dict['night_$lang'].toString(),
-                    weatherIconNight,
-                    weatherNight,
-                    tempNight,
-                    tempFeelNight,
-                    precipitationNight,
-                    windSpeedNight,
-                    humidityNight),
-              ],
-            ),
-          )
-        ],
-      );
-    });
+    } catch (e) {
+      print("Error: $e");
+      errorMessage += '\n';
+      errorMessage += e.toString();
+    }
   }
 
   Flex createBlock(
@@ -513,7 +535,18 @@ class _ForecastState extends State<Forecast> {
                     child: Wrap(spacing: 30, children: daysWeather)),
                 Container(
                   child: infoDayWeather,
-                )
+                ),
+                if (errorMessage != '') const SizedBox(height: 25),
+                if (errorMessage != '')
+                  Text(
+                    errorMessage,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
               ],
             ),
           ),
