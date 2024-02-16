@@ -17,6 +17,8 @@ class Search extends StatefulWidget {
 class _SearchState extends State<Search> {
   TextEditingController nameController = TextEditingController();
 
+  late double fontSize = 1.0;
+
   late String lang = 'en';
   late String domen = 'world-weather.info';
 
@@ -55,9 +57,13 @@ class _SearchState extends State<Search> {
   }
 
   void getData() async {
+    String tempFontSize = await getStringFromLocalStorage('font_size');
     String tempDomen = await getStringFromLocalStorage('domen');
 
     setState(() {
+      if (tempFontSize != '') {
+        fontSize = double.parse(tempFontSize);
+      }
       if (tempDomen != '') {
         domen = tempDomen;
       }
@@ -71,8 +77,12 @@ class _SearchState extends State<Search> {
         }
         var url = Uri.parse('https://$domen/search.php?term=$searchValue1');
         final response = await http.get(url, headers: {
-          HttpHeaders.acceptHeader: 'application/json, text/javascript, */*',
-          HttpHeaders.refererHeader: 'https://$domen/'
+          'Accept': 'application/json, text/javascript, */*',
+          'Cookie': 'celsius=1',
+          'Origin': 'https://$domen',
+          'Referer': 'https://$domen',
+          'User-Agent':
+              'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36 Edg/121.0.0.0'
         });
         if (response.statusCode == 200) {
           List arrObj = jsonDecode(response.body);
@@ -117,18 +127,18 @@ class _SearchState extends State<Search> {
               child: Flex(direction: Axis.vertical, children: [
                 Text(
                   obj['name'],
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 20 * fontSize,
                     decoration: TextDecoration.none,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
                   obj['country'] + ", " + obj['region'],
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 16 * fontSize,
                     decoration: TextDecoration.none,
                     fontWeight: FontWeight.w400,
                   ),

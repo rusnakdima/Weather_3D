@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -17,6 +18,8 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   Timer? timer;
+
+  late double fontSize = 1.0;
 
   late String lang = 'en';
   late String domen = 'world-weather.info';
@@ -70,11 +73,15 @@ class _HomeState extends State<Home> {
   }
 
   void getData() async {
+    String tempFontSize = await getStringFromLocalStorage('font_size');
     String tempLang = await getStringFromLocalStorage('lang');
     String tempDomen = await getStringFromLocalStorage('domen');
     String tempCity = await getStringFromLocalStorage('city');
     String tempCountry = await getStringFromLocalStorage('country');
     setState(() {
+      if (tempFontSize != '') {
+        fontSize = double.parse(tempFontSize);
+      }
       if (tempLang != '') {
         lang = tempLang;
       }
@@ -98,8 +105,11 @@ class _HomeState extends State<Home> {
           domen += '/pogoda';
         }
         var url = Uri.parse('https://$domen/$country/$city/24hours/');
-        final response = await http.Client()
-            .get(url, headers: {HttpHeaders.cookieHeader: 'celsius=1'});
+        final response = await http.Client().get(url, headers: {
+          HttpHeaders.acceptHeader:
+              'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          HttpHeaders.cookieHeader: 'celsius=1',
+        });
         if (response.statusCode == 200) {
           var document = parse(response.body);
           var breadCrumbs = document.body!.querySelector("ul#bread-crumbs");
@@ -210,9 +220,9 @@ class _HomeState extends State<Home> {
                   children: [
                     Text(
                       temp,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 25,
+                        fontSize: 25 * fontSize,
                         decoration: TextDecoration.none,
                         fontWeight: FontWeight.w700,
                       ),
@@ -227,9 +237,9 @@ class _HomeState extends State<Home> {
                     const SizedBox(height: 10),
                     Text(
                       hour,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: 20 * fontSize,
                         decoration: TextDecoration.none,
                         fontWeight: FontWeight.w700,
                       ),
@@ -308,9 +318,9 @@ class _HomeState extends State<Home> {
                 children: [
                   Text(
                     showCity,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 25,
+                      fontSize: 25 * fontSize,
                       fontWeight: FontWeight.w800,
                       decoration: TextDecoration.none,
                     ),
@@ -323,19 +333,10 @@ class _HomeState extends State<Home> {
                       direction: Axis.horizontal,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(date,
-                            style: const TextStyle(
+                        Text("$date $time",
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 25,
-                              fontWeight: FontWeight.w700,
-                              decoration: TextDecoration.none,
-                              letterSpacing: -1.0,
-                            )),
-                        const SizedBox(width: 10),
-                        Text(time,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 25,
+                              fontSize: 25 * fontSize,
                               fontWeight: FontWeight.w700,
                               decoration: TextDecoration.none,
                               letterSpacing: -1.0,
@@ -351,18 +352,18 @@ class _HomeState extends State<Home> {
                         width: 200, height: 200),
                   ),
                   Text(temperature,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 80,
+                        fontSize: 80 * fontSize,
                         fontWeight: FontWeight.w700,
                         decoration: TextDecoration.none,
                         letterSpacing: -3.0,
                       )),
                   Text(weather,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 25,
+                        fontSize: 25 * fontSize,
                         decoration: TextDecoration.none,
                         fontWeight: FontWeight.w500,
                         letterSpacing: -1.0,
@@ -381,17 +382,17 @@ class _HomeState extends State<Home> {
                           ),
                           const SizedBox(height: 10),
                           Text(precipitation,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 18,
+                                fontSize: 18 * fontSize,
                                 decoration: TextDecoration.none,
                                 fontWeight: FontWeight.w400,
                               )),
                           const SizedBox(height: 10),
                           Text(dict['precip_$lang'].toString(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.grey,
-                                fontSize: 18,
+                                fontSize: 18 * fontSize,
                                 decoration: TextDecoration.none,
                                 fontWeight: FontWeight.w400,
                               ))
@@ -405,17 +406,17 @@ class _HomeState extends State<Home> {
                           ),
                           const SizedBox(height: 10),
                           Text(windSpeed,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 18,
+                                fontSize: 18 * fontSize,
                                 decoration: TextDecoration.none,
                                 fontWeight: FontWeight.w400,
                               )),
                           const SizedBox(height: 10),
                           Text(dict['wind_$lang'].toString(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.grey,
-                                fontSize: 18,
+                                fontSize: 18 * fontSize,
                                 decoration: TextDecoration.none,
                                 fontWeight: FontWeight.w400,
                               )),
@@ -429,17 +430,17 @@ class _HomeState extends State<Home> {
                           ),
                           const SizedBox(height: 10),
                           Text(humidity,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 18,
+                                fontSize: 18 * fontSize,
                                 decoration: TextDecoration.none,
                                 fontWeight: FontWeight.w400,
                               )),
                           const SizedBox(height: 10),
                           Text(dict['humidity_$lang'].toString(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.grey,
-                                fontSize: 18,
+                                fontSize: 18 * fontSize,
                                 decoration: TextDecoration.none,
                                 fontWeight: FontWeight.w400,
                               ))
@@ -452,9 +453,9 @@ class _HomeState extends State<Home> {
                     children: [
                       Text(
                         dict['next_$lang'].toString(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 30,
+                          fontSize: 30 * fontSize,
                           fontWeight: FontWeight.w700,
                           decoration: TextDecoration.none,
                         ),
@@ -470,9 +471,9 @@ class _HomeState extends State<Home> {
                   if (errorMessage != '')
                     Text(
                       errorMessage,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.red,
-                        fontSize: 30,
+                        fontSize: 30 * fontSize,
                         fontWeight: FontWeight.w700,
                         decoration: TextDecoration.none,
                       ),

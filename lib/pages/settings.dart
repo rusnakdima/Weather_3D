@@ -10,11 +10,15 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
+  late double fontSize = 1.0;
+
   late String lang = 'en';
 
   final Map<String, String> dict = {
-    "text_en": "Select the program language",
-    "text_ru": "Выберите язык программы"
+    "lang_text_en": "Select the program language",
+    "lang_text_ru": "Выберите язык программы",
+    "font_size_en": "Select the text size in the program",
+    "font_size_ru": "Выберите размер текста в программе"
   };
 
   Future<String> getStringFromLocalStorage(String key) async {
@@ -30,7 +34,7 @@ class _SettingsState extends State<Settings> {
   @override
   void initState() {
     super.initState();
-    getLang();
+    getData();
   }
 
   List<Map<String, String>> langs = [
@@ -38,9 +42,16 @@ class _SettingsState extends State<Settings> {
     {'value': 'ru', 'label': 'Russian'},
   ];
 
-  void getLang() async {
+  void getData() async {
+    String tempFontSize = await getStringFromLocalStorage('font_size');
     String tempLang = await getStringFromLocalStorage('lang');
     setState(() {
+      if (tempFontSize != '') {
+        fontSize = double.parse(tempFontSize);
+        if (fontSize < 0.7 || fontSize > 2.5) {
+          fontSize = 1.0;
+        }
+      }
       if (tempLang != '') {
         lang = tempLang;
       }
@@ -59,10 +70,10 @@ class _SettingsState extends State<Settings> {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Text(
-              dict['text_$lang'].toString(),
-              style: const TextStyle(
+              dict['lang_text_$lang'].toString(),
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 25,
+                fontSize: 25 * fontSize,
                 fontWeight: FontWeight.w400,
                 decoration: TextDecoration.none,
               ),
@@ -73,13 +84,18 @@ class _SettingsState extends State<Settings> {
               decoration: InputDecoration(
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(40))),
+              style: TextStyle(
+                fontSize: 20 * fontSize,
+                height: 1,
+              ),
               items: langs.map((Map<String, String> item) {
                 return DropdownMenuItem(
                   value: item['value'],
                   child: Text(
                     item['label'].toString(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
+                      fontSize: 20 * fontSize,
                       decoration: TextDecoration.none,
                       fontWeight: FontWeight.w600,
                     ),
@@ -97,9 +113,31 @@ class _SettingsState extends State<Settings> {
                   saveStringToLocalStorage('domen', 'world-weather.info');
                   saveStringToLocalStorage('lang', 'en');
                 }
-                getLang();
+                getData();
               },
             ),
+            const SizedBox(height: 10),
+            Text(
+              dict['font_size_$lang'].toString(),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 25 * fontSize,
+                fontWeight: FontWeight.w400,
+                decoration: TextDecoration.none,
+              ),
+            ),
+            Slider(
+                value: fontSize,
+                min: 0.7,
+                max: 2.5,
+                divisions: 10,
+                label: fontSize.toDouble().toString(),
+                onChanged: (double value) {
+                  setState(() {
+                    saveStringToLocalStorage('font_size', value.toString());
+                    getData();
+                  });
+                })
           ],
         ),
       ),
